@@ -14,7 +14,7 @@
 
 ## Struktur Direktori
 ```
-/srv/projects/
+/srv/projects/ [setup_users.sh]
 ├── config.txt           (Dev)
 ├── dev_notes.txt        (Dev)
 ├── help.txt             (Guest)
@@ -27,7 +27,22 @@
 ├── touch_admin.txt
 └── touch_dev.txt
 ```
----
+
+
+```
+/srv/projects/ [setup.sh]
+├── boleh-baca.txt     (Anggota 3)
+├── dev1.txt           (Dev)
+├── dev2.txt           (Dev)
+├── secret1.txt        (Dev)
+├── secret2.txt        (Dev)
+├── umum.txt           (Dev)
+├── subdir1/
+│   └── subfile1.txt   (Dev)
+└── subdir2/
+    ├── boleh-baca-2.txt (Anggota 3)
+    └── subfile2.txt     (Dev)
+```
 
 ## Log & Monitoring
 
