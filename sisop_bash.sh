@@ -39,11 +39,15 @@ while true; do
                 country=$(echo "$info" | grep '"country"' | cut -d '"' -f 4)
                 org=$(echo "$info" | grep '"org"' | cut -d '"' -f 4)
                 loc=$(echo "$info" | grep '"loc"' | cut -d '"' -f 4)
+                timezone=$(echo "$info" | grep '"timezone"' | cut -d '"' -f 4)
+                postal=$(echo "$info" | grep '"postal"' | cut -d '"' -f 4)
 
                 echo "IP Publik : $ip"
                 echo "Kota      : $city"
                 echo "Wilayah   : $region"
                 echo "Negara    : $country"
+                echo "Kode Pos  : $postal"
+                echo "Zona Waktu: $timezone"
                 echo "ISP       : $org"
                 echo "Lokasi    : $loc"
             else
