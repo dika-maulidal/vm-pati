@@ -14,34 +14,21 @@
 
 ## Struktur Direktori
 ```
-/srv/projects/ [setup_users.sh]
-├── config.txt           (Dev)
-├── dev_notes.txt        (Dev)
-├── help.txt             (Guest)
-├── index.html           (Dev)
-├── license.txt          (Guest)
-├── project_spec.txt     (Dev)
-├── readme.txt           (Guest)
-├── styles.css           (Dev)
-├── task_manager.txt     (Dev)
-├── touch_admin.txt
-└── touch_dev.txt
-```
-
-
-```
 /srv/projects/ [setup.sh]
-├── boleh-baca.txt     (Anggota 3)
-├── dev1.txt           (Dev)
-├── dev2.txt           (Dev)
-├── secret1.txt        (Dev)
-├── secret2.txt        (Dev)
-├── umum.txt           (Dev)
+├── boleh-baca.txt           (Anggota 3)
+├── dev1.txt                 (Dev)
+├── dev2.txt                 (Dev)
+├── secret1.txt              (Dev)
+├── secret2.txt              (Dev)
+├── umum.txt                 (Dev)
 ├── subdir1/
-│   └── subfile1.txt   (Dev)
-└── subdir2/
-    ├── boleh-baca-2.txt (Anggota 3)
-    └── subfile2.txt     (Dev)
+│   └── subfile1.txt         (Dev)
+├── subdir2/
+│   ├── boleh-baca-2.txt     (Anggota 3)
+│   └── subfile2.txt         (Dev)
+└── public_for_anggota3/     (Anggota 3 full access)
+    ├── file1.txt
+    └── file2.txt
 ```
 
 ## Log & Monitoring
@@ -54,3 +41,15 @@
 | `sudo getent shadow`               | Melihat isi file `/etc/shadow`              |
 
 ---
+
+# Pengujian DNS
+```
+nslookup dev.corpX.local
+nslookup git.corpX.local
+nslookup mail.corpX.local
+
+dig dev.corpX.local
+dig git.corpX.local
+
+host mail.corpX.local
+```
