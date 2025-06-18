@@ -1,107 +1,163 @@
 #!/bin/bash
 
-figlet "$(whoami)"
+# ------ Definisi Warna ANSI ------
+NC='\033[0m'
+BOLD='\033[1m'
+BLUE='\033[0;34m'
+LBLUE='\033[1;34m'
+CYAN='\033[0;36m'
+LCYAN='\033[1;36m'
 
+# ------ Fungsi Header ------
+header() {
+    clear
+    ascii_art=(
+"███╗   ███╗███████╗███╗   ██╗██╗   ██╗    ██████╗  █████╗ ███████╗██╗  ██╗"
+"████╗ ████║██╔════╝████╗  ██║██║   ██║    ██╔══██╗██╔══██╗██╔════╝██║  ██║"
+"██╔████╔██║█████╗  ██╔██╗ ██║██║   ██║    ██████╔╝███████║███████╗███████║"
+"██║╚██╔╝██║██╔══╝  ██║╚██╗██║██║   ██║    ██╔══██╗██╔══██║╚════██║██╔══██║"
+"██║ ╚═╝ ██║███████╗██║ ╚████║╚██████╔╝    ██████╔╝██║  ██║███████║██║  ██║"
+"╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝ ╚═════╝     ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝"
+"                                                                         "
+    )
+
+    max_len=0
+    for line in "${ascii_art[@]}"; do
+        [ ${#line} -gt $max_len ] && max_len=${#line}
+    done
+
+    echo -e "${BOLD}${LCYAN}╔$(printf '═%.0s' $(seq 1 $((max_len + 2))))╗${NC}"
+    for line in "${ascii_art[@]}"; do
+        padding=$(( (max_len - ${#line}) / 2 ))
+        pad_right=$(( max_len - ${#line} - padding ))
+        printf "${BOLD}${LCYAN}║${NC} %${padding}s${BOLD}${LBLUE}%s%${pad_right}s ${BOLD}${LCYAN}║${NC}\n" "" "$line" ""
+    done
+    echo -e "${BOLD}${LCYAN}╚$(printf '═%.0s' $(seq 1 $((max_len + 2))))╝${NC}"
+}
+
+# ------ Fungsi Menu ------
+show_menu() {
+    echo
+    echo -e "${CYAN}1.${NC} ${BOLD}${BLUE}INFORMASI JARINGAN${NC}"
+    echo -e "${CYAN}2.${NC} ${BOLD}${BLUE}TAMPILKAN DETAIL OS${NC}"
+    echo -e "${CYAN}3.${NC} ${BOLD}${BLUE}KELUAR${NC}"
+    echo
+}
+
+pause() {
+    echo
+    echo -ne "${BOLD}${CYAN}Tekan Enter untuk kembali ke menu utama...${NC}"
+    read -r
+}
+
+# ------ Fungsi Informasi Jaringan ------
+show_network_info() {
+    echo -e "${BOLD}${LBLUE}\n[ Informasi Jaringan ]${NC}"
+
+    echo -e "${BOLD}${LCYAN}\n[ Informasi Jaringan Lokal ]${NC}"
+    ip addr show | grep inet | grep -v inet6 | grep -v 127.0.0.1 | while read -r line; do
+        ip_cidr=$(echo "$line" | awk '{print $2}')
+        ip=$(echo "$ip_cidr" | cut -d'/' -f1)
+        gateway=$(ip route | grep default | awk '{print $3}')
+
+        echo -e "${CYAN}Alamat IP   :${NC} $ip"
+        echo -e "${CYAN}Gateway     :${NC} $gateway"
+        echo -e "${CYAN}Netmask     :${NC} $ip_cidr"
+    done
+
+    echo -e "${BOLD}${LCYAN}\n[ Server DNS ]${NC}"
+    [ -f /etc/resolv.conf ] && grep nameserver /etc/resolv.conf | awk '{print "    "$2}' || echo "    File /etc/resolv.conf tidak ditemukan."
+
+    if command -v nmcli &>/dev/null && systemctl is-active NetworkManager &>/dev/null; then
+        nmcli connection show --active | awk 'NR>1 {print $1}' | while read -r conn; do
+            nmcli connection show "$conn" | grep 'ipv4.dns:' | awk '{print "    "$2}'
+        done
+    fi
+
+    echo -e "${BOLD}${LCYAN}\n[ Detail Antarmuka Jaringan ]${NC}"
+    if command -v nmcli &>/dev/null && systemctl is-active NetworkManager &>/dev/null; then
+        nmcli device status | awk 'NR==1 {printf "\033[1;37m%-10s %-10s %-25s %-s\033[0m\n", $1, $2, $3, $4}
+        NR>1 {printf "\033[36m%-10s %-10s %-25s %-s\033[0m\n", $1, $2, $3, $4}'
+    else
+        ip link show | awk '/^[0-9]+:/ {print "Perangkat: "$2, "Status: "$9}'
+    fi
+
+    echo -e "${BOLD}${LCYAN}\n[ Status Koneksi Internet ]${NC}"
+    curl -s --head https://www.google.com > /dev/null && \
+        echo -e "${CYAN}Koneksi Internet:${NC} Terhubung" || \
+        echo -e "${CYAN}Koneksi Internet:${NC} Tidak Terhubung"
+
+    echo -e "${BOLD}${LCYAN}\n[ Informasi Geolokasi IP Publik ]${NC}"
+    if command -v curl &>/dev/null; then
+        info=$(curl -s ipinfo.io)
+        city=$(echo "$info" | grep '"city"' | cut -d '"' -f 4)
+        region=$(echo "$info" | grep '"region"' | cut -d '"' -f 4)
+        country=$(echo "$info" | grep '"country"' | cut -d '"' -f 4)
+
+        echo -e "${CYAN}Kota      :${NC} $city"
+        echo -e "${CYAN}Wilayah   :${NC} $region"
+        echo -e "${CYAN}Negara    :${NC} $country"
+    else
+        echo "curl tidak ditemukan. Silakan install dengan: sudo apt install curl"
+    fi
+
+    pause
+}
+
+# ------ Fungsi Detail OS ------
+show_os_info() {
+    echo -e "${BOLD}${LBLUE}\n[ Detail Sistem Operasi ]${NC}"
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo -e "${CYAN}Nama OS    :${NC} $NAME"
+        echo -e "${CYAN}Versi      :${NC} $VERSION"
+        echo -e "${CYAN}ID         :${NC} $ID"
+        echo -e "${CYAN}Keterangan :${NC} $PRETTY_NAME"
+    else
+        echo "File /etc/os-release tidak ditemukan."
+    fi
+
+    echo -e "${BOLD}${LCYAN}\nInformasi Kernel:${NC}"
+    echo -e "${CYAN}    $(uname -r)${NC}"
+
+    echo -e "${BOLD}${LCYAN}\nPenggunaan CPU:${NC}"
+    if command -v mpstat &>/dev/null; then
+        mpstat 1 1 | awk '/Average/ {
+            printf "\033[36m    %%CPU: %s us, %s sy, %s wa, %s hi, %s si, %s st, %s id\033[0m\n", $3, $5, $6, $7, $8, $9, $12
+        }'
+    else
+        cpu=$(awk '/cpu / { total=$2+$4+$5; printf "    %%CPU: %.2f us, %.2f sy, %.2f id", ($2/total)*100, ($4/total)*100, ($5/total)*100 }' /proc/stat)
+        echo -e "\033[36m$cpu\033[0m"
+    fi
+
+    echo -e "${BOLD}${LCYAN}\nPenggunaan Memori:${NC}"
+    echo -e "\033[36m$(free -h)\033[0m"
+
+    echo -e "${BOLD}${LCYAN}\nPenggunaan Disk:${NC}"
+    echo -e "\033[36m$(df -h)\033[0m"
+
+    pause
+}
+
+# ------ Loop Menu Utama ------
 while true; do
-    echo "=============================="
-    echo "         MENU UTAMA"
-    echo "=============================="
-    echo "1. TAMPILKAN KEHADIRAN SAAT INI"
-    echo "2. TAMPILKAN DAFTAR DIREKTORI INI"
-    echo "3. INFORMASI JARINGAN"
-    echo "4. TAMPILKAN DETAIL OS"
-    echo "5. TAMPILKAN WAKTU INSTALL PERTAMA OS"
-    echo "6. INFORMASI USER"
-    echo "7. KELUAR"
-    echo "=============================="
+    header
+    show_menu
 
-    read -p "PILIH OPSI [1-7]: " pilihan
+    echo -ne "${BOLD}${CYAN}PILIH OPSI [1-3]: ${NC}"
+    read -r pilihan
 
     case $pilihan in
-        1)
-            echo -e "\n[ Kehadiran Saat Ini ]"
-            uptime
-            ;;
-        2)
-            echo -e "\n[ Daftar Direktori Sekarang ]"
-            ls -l
-            ;;
+        1) show_network_info ;;
+        2) show_os_info ;;
         3)
-            echo -e "\n[ Informasi Jaringan Lokal ]"
-            ip addr
-
-            echo -e "\n[ Informasi Geolokasi IP Publik ]"
-            if command -v curl &> /dev/null; then
-                info=$(curl -s ipinfo.io)
-                ip=$(echo "$info" | grep '"ip"' | cut -d '"' -f 4)
-                city=$(echo "$info" | grep '"city"' | cut -d '"' -f 4)
-                region=$(echo "$info" | grep '"region"' | cut -d '"' -f 4)
-                country=$(echo "$info" | grep '"country"' | cut -d '"' -f 4)
-                org=$(echo "$info" | grep '"org"' | cut -d '"' -f 4)
-                loc=$(echo "$info" | grep '"loc"' | cut -d '"' -f 4)
-                timezone=$(echo "$info" | grep '"timezone"' | cut -d '"' -f 4)
-                postal=$(echo "$info" | grep '"postal"' | cut -d '"' -f 4)
-
-                echo "IP Publik : $ip"
-                echo "Kota      : $city"
-                echo "Wilayah   : $region"
-                echo "Negara    : $country"
-                echo "Kode Pos  : $postal"
-                echo "Zona Waktu: $timezone"
-                echo "ISP       : $org"
-                echo "Lokasi    : $loc"
-            else
-                echo "curl tidak ditemukan. Silakan install dengan: sudo apt install curl"
-            fi
-            ;;
-        4)
-            echo -e "\n[ Detail Sistem Operasi ]"
-            lsb_release -a
-            uname -a
-            ;;
-        5)
-            echo -e "\n[ Perkiraan Waktu Install Pertama OS ]"
-            install_time=$(stat -c %w /)
-            if [[ "$install_time" == "-" ]]; then
-                echo "Informasi waktu tidak tersedia dengan stat -c %w."
-                echo "Alternatif: lihat log /var/log/installer atau file system lainnya."
-            else
-                echo "Pertama kali diinstall: $install_time"
-            fi
-            ;;
-        6)
-            echo -e "\n[ Informasi User ]"
-            if command -v finger &> /dev/null; then
-                finger $(whoami)
-            else
-                echo "Perintah finger tidak ditemukan. Silakan install dengan:"
-                echo "sudo apt install finger"
-            fi
-            ;;
-        7)
-            read -p "Apakah kamu yakin ingin keluar? (y/n): " konfirmasi
-            if [[ "$konfirmasi" =~ ^[Yy]$ ]]; then
-                hour=$(date +%H)
-                if (( hour < 12 )); then
-                    greeting="Selamat Pagi!"
-                elif (( hour < 18 )); then
-                    greeting="Selamat Siang!"
-                else
-                    greeting="Selamat Malam!"
-                fi
-                echo -e "\n$greeting Terima kasih telah menggunakan MENU SUGAR."
-                break
-            else
-                echo "Kembali ke menu utama..."
-            fi
+            echo -ne "${CYAN}Apakah Anda yakin ingin keluar? (y/n): ${NC}"
+            read -r REPLY
+            [[ $REPLY =~ ^[Yy]$ ]] && echo -e "\n${BOLD}${LCYAN}Terima kasih telah menggunakan skrip ini.${NC}" && break
             ;;
         *)
-            echo "Opsi tidak valid. Silakan pilih antara 1-7."
+            echo -e "${BOLD}${RED}Opsi tidak valid.${NC}"
+            pause
             ;;
     esac
-
-    echo -e "\nTekan Enter untuk kembali ke menu..."
-    read
-    clear
-    figlet "$(whoami)"
 done
