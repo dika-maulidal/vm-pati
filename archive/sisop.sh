@@ -74,7 +74,7 @@ show_network_info() {
         done
     fi
 
-    echo -e "${BOLD}${LCYAN}\n[ Detail Antarmuka Jaringan ]${NC}"
+    echo -e "${BOLD}${LCYAN}\n[ Status Koneksi LAN/WIFI ]${NC}"
     if command -v nmcli &>/dev/null && systemctl is-active NetworkManager &>/dev/null; then
         nmcli device status | awk 'NR==1 {printf "\033[1;37m%-10s %-10s %-25s %-s\033[0m\n", $1, $2, $3, $4}
         NR>1 {printf "\033[36m%-10s %-10s %-25s %-s\033[0m\n", $1, $2, $3, $4}'
@@ -117,10 +117,10 @@ show_os_info() {
         echo "File /etc/os-release tidak ditemukan."
     fi
 
-    echo -e "${BOLD}${LCYAN}\nInformasi Kernel:${NC}"
+    echo -e "${BOLD}${LCYAN}\n[ Informasi Kernel: ]${NC}"
     echo -e "${CYAN}    $(uname -r)${NC}"
 
-    echo -e "${BOLD}${LCYAN}\nPenggunaan CPU:${NC}"
+    echo -e "${BOLD}${LCYAN}\n[ Penggunaan CPU: ]${NC}"
     if command -v mpstat &>/dev/null; then
         mpstat 1 1 | awk '/Average/ {
             printf "\033[36m    %%CPU: %s us, %s sy, %s wa, %s hi, %s si, %s st, %s id\033[0m\n", $3, $5, $6, $7, $8, $9, $12
@@ -130,10 +130,10 @@ show_os_info() {
         echo -e "\033[36m$cpu\033[0m"
     fi
 
-    echo -e "${BOLD}${LCYAN}\nPenggunaan Memori:${NC}"
+    echo -e "${BOLD}${LCYAN}\n[ Penggunaan Memori: ]${NC}"
     echo -e "\033[36m$(free -h)\033[0m"
 
-    echo -e "${BOLD}${LCYAN}\nPenggunaan Disk:${NC}"
+    echo -e "${BOLD}${LCYAN}\n[ Penggunaan Disk: ]${NC}"
     echo -e "\033[36m$(df -h)\033[0m"
 
     pause
